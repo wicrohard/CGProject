@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "camera.h"
-#include "shader_m.h"
+#include "shader.h"
 #include "model.h"
 
 #include <stb_image.h>
@@ -72,14 +72,19 @@ int main()
 
 	// 着色器的读取和编译
 	// -------------------------
-	Shader ourShader("model.vs", "model.fs");
+	Shader planetShader("model.vs", "model.fs");
+	Shader shipShader("shipModel.vs", "shipModel.fs");
 	Shader skyboxShader("skybox.vs", "skybox.fs");
 	Shader planeShader("plane.vs", "plane.fs");
-	Shader shadowShader("shadow_depth.vs", "shadow_depth.fs");
+	Shader shadowShader("shadow_depth.vs", "shadow_depth.fs","shadow_depth.gs");
 
-	ourShader.use();
-	ourShader.setInt("texture_diffuse1", 0);
-	ourShader.setInt("shadowMap", 1);
+	planetShader.use();
+	planetShader.setInt("texture_diffuse1", 0);
+	planetShader.setInt("depthCubeMap", 1);
+
+	shipShader.use();
+	shipShader.setInt("texture_diffuse1", 0);
+	shipShader.setInt("depthCubeMap", 1);
 
 	// load models
 	// -----------
@@ -88,6 +93,10 @@ int main()
 
 	//加载飞船模型
 	Model shipModel("spaceShip/spaceShip.obj");
+	float shipSize = 0.125;
+
+	//加载传送门模型
+	Model portalModel("portal/portal.obj");
 
 	//天空盒的顶点数据
 	float skyboxVertices[] = {
@@ -156,7 +165,7 @@ int main()
 	unsigned int cubemapTexture = loadCubemap(faces);
 
 	//创建恒星的平面
-	Plane sun(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(8.0f));
+	Plane sun(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f));
 
 	//读取恒星的贴图
 	GLuint sunTexture;
@@ -196,23 +205,26 @@ int main()
 	pars.load("sun/snowflower.png");
 	pars.start();
 
-	//创建阴影的深度贴图
+	//创建点阴影的深度立方体贴图
 	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 	GLuint depthMapFBO;
 	glGenFramebuffers(1, &depthMapFBO);
 	// - Create depth texture
-	GLuint depthMap;
-	glGenTextures(1, &depthMap);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
+	GLuint depthCubeMap;
+	glGenTextures(1, &depthCubeMap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
+	for (GLuint i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+			SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubeMap, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -237,35 +249,50 @@ int main()
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 
 		//进行深度贴图的渲染
-		glm::mat4 lightProjection, lightView;
-		glm::mat4 lightSpaceMatrix;
-		GLfloat near_plane = 0.1f, far_plane = 100.0f;
-		lightProjection = glm::ortho(-60.0f, 60.0f, -60.0f, 60.0f, near_plane, far_plane);
+		glm::mat4 lightProjection;
+		GLfloat near_plane = 1.0f, far_plane = 100.0f;
+		lightProjection = glm::perspective(glm::radians(90.0f), 1.0f, near_plane, far_plane);
 
 		float radius = 0.1f;
-		float planetX = sin(glfwGetTime() * radius) * 30.0;
-		float planetZ = cos(glfwGetTime() * radius) * 30.0;
+		float planetX = cos(glfwGetTime() * radius) * 30.0;
+		float planetZ = -sin(glfwGetTime() * radius) * 30.0;
+		float portalOutX = cos(glfwGetTime() * radius - 0.2f) * 30.0;
+		float portalOutZ = -sin(glfwGetTime() * radius - 0.2f) * 30.0;
 		//float planetX = 30.0f;
 		//float planetZ = 30.0f;
 
-		lightView = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(planetX, 0.0f, planetZ), glm::vec3(0.0, 1.0, 0.0));
-		lightSpaceMatrix = lightProjection * lightView;
+		std::vector<glm::mat4> shadowTransforms;
+		shadowTransforms.push_back(lightProjection * glm::lookAt(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+		shadowTransforms.push_back(lightProjection *
+			glm::lookAt(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+		shadowTransforms.push_back(lightProjection *
+			glm::lookAt(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+		shadowTransforms.push_back(lightProjection *
+			glm::lookAt(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
+		shadowTransforms.push_back(lightProjection *
+			glm::lookAt(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
+		shadowTransforms.push_back(lightProjection *
+			glm::lookAt(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
+	
 		// 从光源的视角进行深度贴图的渲染
-		shadowShader.use();
 		//glUniformMatrix4fv(glGetUniformLocation(simpleDepthShader.Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-		shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		//shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		//RenderScene(shadowShader);
+		shadowShader.use();
+		for (GLuint i = 0; i < 6; ++i)
+			shadowShader.setMat4(("shadowMatrices[" + std::to_string(i) + "]").c_str(), shadowTransforms[i]);
+		shadowShader.setFloat("far_plane", far_plane);
+		shadowShader.setVec3("lightPos", glm::vec3(1.0f, 0.0f, 0.0f));
 
 		//渲染行星
 		glm::mat4 model = glm::mat4(1.0f);
 		//公转
 		model = glm::translate(model, glm::vec3(planetX, 0.0f, planetZ));
 		//自转
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians((float)glfwGetTime() * 40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
 		shadowShader.setMat4("model", model);
 
@@ -279,8 +306,17 @@ int main()
 
 		shipModel.Draw(shadowShader);
 
+		//渲染传送门
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 20.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		shadowShader.setMat4("model", model);
+
+		portalModel.Draw(shadowShader);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		/*-------------------------------------------------------------------------------------------------*/
 		//场景渲染
 		//首先进行天空盒的渲染
 		//glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
@@ -302,44 +338,74 @@ int main()
 		glEnable(GL_DEPTH_TEST);
 		//glDepthFunc(GL_LESS);
 
-		// 使用模型加载用的shader
-		ourShader.use();
+		// 使用行星渲染用的shader
+		planetShader.use();
 
 		//传入光源的位置
-		ourShader.setVec3("lightPos", glm::vec3(1.0f, 0.0f, 0.0f));
+		planetShader.setVec3("lightPos", glm::vec3(1.0f, 0.0f, 0.0f));
+		
 		//传入摄像机的位置
-		ourShader.setVec3("viewPos", camera.Position);
-		ourShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		planetShader.setVec3("viewPos", camera.Position);
 
+		//传入投影矩阵和视角矩阵
 		view = camera.GetViewMatrix();
-		ourShader.setMat4("projection", projection);
-		ourShader.setMat4("view", view);
+		planetShader.setMat4("projection", projection);
+		planetShader.setMat4("view", view);
+
+		//传入计算点阴影用的投影远平面值
+		planetShader.setFloat("far_plane", far_plane);
 
 		//渲染行星
 		//公转
-
+		
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(planetX, 0.0f, planetZ)); 
 		//自转
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians((float)glfwGetTime() * 40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		//model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	
-		ourShader.setMat4("model", model);
+		planetShader.setMat4("model", model);
 
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
 
-		planetModel.Draw(ourShader);
+		planetModel.Draw(planetShader);
 
 		//渲染飞船
+		shipShader.use();
+
+		//传入光源和摄像机的位置值
+		shipShader.setVec3("lightPos", glm::vec3(1.0f, 0.0f, 0.0f));
+
+		shipShader.setVec3("viewPos", camera.Position);
+
+		//传入投影和观察矩阵
+		shipShader.setMat4("projection", projection);
+		shipShader.setMat4("view", view);
+
+		//传入计算点阴影用的投影远平面值
+		shipShader.setFloat("far_plane", far_plane);
+
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, camera.getPosition() + camera.getFront());
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-		ourShader.setMat4("model", model);
+		shipShader.setMat4("model", model);
 
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
 
-		shipModel.Draw(ourShader);
+		shipModel.Draw(shipShader);
+
+		//渲染传送门
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 20.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		shipShader.setMat4("model", model);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
+
+		portalModel.Draw(shipShader);
 
 		//渲染恒星
 		glEnable(GL_BLEND);
@@ -364,6 +430,15 @@ int main()
 		pars.render(camera, planeShader);
 
 		glDisable(GL_BLEND);
+
+		//进行碰撞检测
+		bool collisionX = (camera.getPosition() + camera.getFront()).x + shipSize >= -1.0 && 1.0 >= (camera.getPosition() + camera.getFront()).x - shipSize;
+		bool collisionY = (camera.getPosition() + camera.getFront()).y + shipSize >= -1.0 && 1.0 >= (camera.getPosition() + camera.getFront()).y - shipSize;
+		bool collisionZ = (camera.getPosition() + camera.getFront()).z + shipSize >= 19.0 && 21.0 >= (camera.getPosition() + camera.getFront()).z - shipSize;
+
+		if (collisionX && collisionY && collisionZ) {
+			camera.transport(glm::vec3(portalOutX, 0.0f, portalOutZ));
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

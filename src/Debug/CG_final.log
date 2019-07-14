@@ -1,0 +1,14 @@
+﻿  main.cpp
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(241): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(257): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(258): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(259): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(260): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(490): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(491): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(495): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(496): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(498): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(499): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+d:\study\cg\afinalproj\cg_final\cg_final\main.cpp(508): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+  CG_final.vcxproj -> D:\study\CG\aFinalProj\CG_final\Debug\CG_final.exe

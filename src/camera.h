@@ -107,8 +107,6 @@ public:
 		if (direction == SHIFT_RELEASE) {
 			MovementSpeed = 10.0f;
 		}
-
-		
     }
 
     // 处理鼠标移动输入，用于控制摄像机的视角
@@ -149,6 +147,11 @@ public:
 
 	glm::vec3 getFront() {
 		return Front;
+	}
+
+	//这个方法用来使摄像机（飞船）进行传送
+	void transport(glm::vec3 newPosition) {
+		Position = newPosition;
 	}
 
 private:
