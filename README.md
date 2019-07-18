@@ -107,6 +107,7 @@
   <img src="images/matrix.png" width="70%">
 </div>
 在渲染贴图的函数中用这个矩阵乘以model矩阵。最终，实现了贴图朝向摄像机的效果  
+
 ### 3.Gamma 矫正
 **Gamma校正**(Gamma Correction)的思路是在最终的颜色输出上应用监视器Gamma的倒数。使用Gamma矫正之后可以让场景的颜色看起来效果更好
 <div align="center">
@@ -116,6 +117,7 @@
 <div align="center">
   <img src="images/Gamma_apply_display.png">
 </div>
+
 ### 4.碰撞检测  
 采用**AABB**碰撞检测实现一个传送门的效果。以始终与坐标轴平行的长方体盒作为碰撞检测的范围，当飞船与传送门的碰撞检测盒重叠时，将飞船传送到行星的旁边，利用科幻元素的空间传送门来实现快速旅行到行星附近，方便进行行星的观察。
 <div align="center">
@@ -124,6 +126,7 @@
   
 <div align="center">
   <img src="images/teleport_entrance.png" width="79%">
+  <p>可供飞船进行传送的传送门</p>
 </div>
 
 ## 小组成员分工
