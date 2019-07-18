@@ -111,11 +111,13 @@
 ### 3.Gamma 矫正
 **Gamma校正**(Gamma Correction)的思路是在最终的颜色输出上应用监视器Gamma的倒数。使用Gamma矫正之后可以让场景的颜色看起来效果更好
 <div align="center">
-  <img src="images/Gamma_display.png">
+  <img src="images/Gamma_display.png" width="70%">
+  <p>Gamma矫正前</p>
 </div>
   
 <div align="center">
   <img src="images/Gamma_apply_display.png">
+  <p>Gamma矫正后</p>
 </div>
 
 ### 4.碰撞检测  
