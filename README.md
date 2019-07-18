@@ -124,6 +124,7 @@
 采用**AABB**碰撞检测实现一个传送门的效果。以始终与坐标轴平行的长方体盒作为碰撞检测的范围，当飞船与传送门的碰撞检测盒重叠时，将飞船传送到行星的旁边，利用科幻元素的空间传送门来实现快速旅行到行星附近，方便进行行星的观察。
 <div align="center">
   <img src="images/collision_detection.png" width="70%">
+  <p>AABB碰撞检测原理</p>
 </div>
   
 <div align="center">
