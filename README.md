@@ -34,7 +34,12 @@
 
 ### Bonus
 1.Sky Box
+
 2.Particle System
+
+3.Gamma Correction
+
+4.碰撞检测
 
 ## 实现的功能点简单介绍
 ### Basic
@@ -135,7 +140,7 @@
 ## 小组成员分工
 + 林一山16340144：粒子系统实现，恒星贴图的实现
 + 刘峻佚16340151：Blender建模，模型导入，基本场景搭建和行星运动动画，摄像机第三人称控制系统
-+ 罗源茂16340163：phong lighting, phong shading模型实现
++ 罗源茂16340163：phong lighting, phong shading模型实现，碰撞检测
 + 卢林鹏16340159：阴影映射的实现，天空盒
 
 ## 个人报告  
